@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const { Engine } = require("@aux4/engine");
 const validateExecutor = require("./command/ValidateCommand");
 
