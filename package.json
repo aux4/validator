@@ -1,0 +1,38 @@
+{
+  "name": "@aux4/validator",
+  "version": "0.0.1",
+  "description": "Command-line interface (CLI) to validate JSON data",
+  "main": "index.js",
+  "preferGlobal": true,
+  "bin": {
+    "aux4-validator": "bin/executable.js"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/aux4/validator.git"
+  },
+  "keywords": [
+    "aux4",
+    "cli",
+    "json",
+    "validator"
+  ],
+  "author": "Aux4 Team",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/aux4/validator/issues"
+  },
+  "homepage": "https://github.com/aux4/validator#readme",
+  "dependencies": {
+    "@aux4/config": "^1.0.2",
+    "@aux4/engine": "^1.0.31",
+    "@aux4/input": "^0.0.3",
+    "validatorjs": "^3.22.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
