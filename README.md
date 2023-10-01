@@ -1,6 +1,8 @@
 # @aux4/validator
 Command-line interface (CLI) to validate JSON data.
 
+![npm](https://img.shields.io/npm/v/@aux4/validator)
+
 ## Install
 
 ```bash
