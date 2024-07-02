@@ -35,6 +35,7 @@ async function validateExecutor(params) {
     });
   } else {
     const data = await Input.readAsJson(root);
+    console.log("data", JSON.stringify(data, null, 2));
     const [valid, invalid] = validate(data, rules);
 
     printOutput(Array.isArray(data), valid, invalid, { silent, onlyValid, onlyInvalid });

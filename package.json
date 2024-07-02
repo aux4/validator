@@ -29,7 +29,7 @@
   "dependencies": {
     "@aux4/config": "^1.0.3",
     "@aux4/engine": "^1.0.67",
-    "@aux4/input": "^0.0.4",
+    "@aux4/input": "^0.0.5",
     "validatorjs": "^3.22.1"
   },
   "devDependencies": {
