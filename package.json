@@ -1,6 +1,6 @@
 {
   "name": "@aux4/validator",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Command-line interface (CLI) to validate JSON data",
   "main": "index.js",
   "preferGlobal": true,
