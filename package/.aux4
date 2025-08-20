@@ -1,0 +1,90 @@
+{
+  "scope": "aux4",
+  "name": "validator",
+  "version": "1.0.0",
+  "description": "aux4 data validator",
+  "dependencies": [
+    "aux4/config"
+  ],
+  "tags": [
+    "aux4",
+    "validator",
+    "data",
+    "json"
+  ],
+  "profiles": [
+    {
+      "name": "main",
+      "commands": [
+        {
+          "name": "cool",
+          "execute": [
+            "stdin:echo 'cool command executed'"
+          ],
+          "help": {
+            "text": ""
+          }
+        },
+        {
+          "name": "validator",
+          "execute": [
+            "profile:validator"
+          ],
+          "help": {
+            "text": "aux4 data validator"
+          }
+        }
+      ]
+    },
+    {
+      "name": "validator",
+      "commands": [
+        {
+          "name": "validate",
+          "execute": [
+            "stdin:node ${packageDir}/lib/aux4-validator.mjs validate value($rules) values(lang, stream, ignore, silent, onlyValid, onlyInvalid)"
+          ],
+          "help": {
+            "text": "validate json input",
+            "variables": [
+              {
+                "name": "rules",
+                "text": "Validation rules"
+              },
+              {
+                "name": "lang",
+                "text": "Validator language",
+                "default": "en"
+              },
+              {
+                "name": "stream",
+                "text": "Stream input",
+                "default": "false"
+              },
+              {
+                "name": "ignore",
+                "text": "Ignore errors (always exit code 0)",
+                "default": "false"
+              },
+              {
+                "name": "silent",
+                "text": "Does not output anything",
+                "default": "false"
+              },
+              {
+                "name": "onlyValid",
+                "text": "Output only valid data",
+                "default": "false"
+              },
+              {
+                "name": "onlyInvalid",
+                "text": "Output only invalid data",
+                "default": "false"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,48 +1,80 @@
-const { ConfigLoader } = require("@aux4/config");
-const RuleExtractor = require("../../lib/RuleExtractor");
-const Input = require("@aux4/input");
-const Validator = require("validatorjs");
+import RuleExtractor from "../../lib/RuleExtractor.js";
+import Validator from "validatorjs";
+import { value as jsonpath } from "./JsonPath.js";
+import { getLanguageMessages } from "./LanguageLoader.js";
+import { parse as jsonStreamParse } from "./JsonStreamParser.js";
 
 async function validateExecutor(params) {
-  const lang = (await params.lang) || "en";
-  const raw = getBooleanParam(await params.raw);
-  const stream = getBooleanParam(await params.stream);
-  const ignore = getBooleanParam(await params.ignore);
-  const silent = getBooleanParam(await params.silent);
-  const onlyValid = getBooleanParam(await params.onlyValid);
-  const onlyInvalid = getBooleanParam(await params.onlyInvalid);
-  const root = await params.root;
 
-  Validator.useLang(lang);
+  const lang = params.lang || "en";
+  const rulesConfig = params.rules;
+  const stream = getBooleanParam(params.stream);
+  const ignore = getBooleanParam(params.ignore);
+  const silent = getBooleanParam(params.silent);
+  const onlyValid = getBooleanParam(params.onlyValid);
+  const onlyInvalid = getBooleanParam(params.onlyInvalid);
+  const root = params.root;
 
-  const config = await loadConfig(params);
-  if (!config) {
-    throw new Error(`Configuration not found: ${params.config}`);
+  // Load language messages from validatorjs language files
+  const messages = await getLanguageMessages(lang);
+  if (messages) {
+    Validator.setMessages(lang, messages);
+    Validator.useLang(lang);
+  } else {
+    // Fallback to English if language is not supported
+    const enMessages = await getLanguageMessages('en');
+    Validator.setMessages('en', enMessages);
+    Validator.useLang('en');
   }
 
-  let rules;
-  if (raw) {
-    rules = config;
-  } else {
-    rules = RuleExtractor.extractRules(config);
-  }
+  const rules = RuleExtractor.extractRules(rulesConfig);
 
-  if (stream) {
-    const dataStream = Input.stream(root);
-    dataStream.on("data", data => {
-      const [valid, invalid] = validate(data, rules);
-      printOutput(Array.isArray(data), valid, invalid, { silent, onlyValid, onlyInvalid });
-    });
-  } else {
-    const data = await Input.readAsJson(root);
+  // Use streaming approach for both stream and non-stream modes to avoid memory issues
+  const dataStream = streamInput(root);
+  let hasInvalidItems = false;
+  let processedItems = 0;
+  let validItems = [];
+  let invalidItems = [];
+  
+  dataStream.on("data", data => {
     const [valid, invalid] = validate(data, rules);
-
-    printOutput(Array.isArray(data), valid, invalid, { silent, onlyValid, onlyInvalid });
-
-    if (!ignore && invalid.length > 0) {
-      process.exit(40);
+    processedItems++;
+    
+    if (stream) {
+      // Stream mode: output immediately
+      printOutput(false, valid, invalid, { silent, onlyValid, onlyInvalid });
+    } else {
+      // Non-stream mode: collect items but don't load all JSON in memory
+      validItems = validItems.concat(valid);
+      invalidItems = invalidItems.concat(invalid);
     }
-  }
+    
+    // Set exit code if there are invalid items and ignore is false
+    if (!ignore && invalid.length > 0) {
+      hasInvalidItems = true;
+      if (stream) {
+        process.exitCode = 40;
+      }
+    }
+  });
+  
+  dataStream.on("error", error => {
+    console.error("Stream error:", error.message.red);
+    process.exit(1);
+  });
+  
+  dataStream.on("end", () => {
+    if (!stream) {
+      // Non-stream mode: output collected results
+      printOutput(processedItems > 1, validItems, invalidItems, { silent, onlyValid, onlyInvalid });
+    }
+    
+    if (!ignore && hasInvalidItems) {
+      process.exit(40);
+    } else if (stream && process.exitCode !== 40) {
+      process.exit(0);
+    }
+  });
 }
 
 function getBooleanParam(value) {
@@ -65,7 +97,7 @@ function print(stream, data, isArray) {
   if (data.length === 0) return;
 
   const outputData = isArray ? data : data[0];
-  stream(JSON.stringify(outputData, null, 2));
+  stream(JSON.stringify(outputData));
 }
 
 function validate(data, rules) {
@@ -95,12 +127,48 @@ function validateObject(object, rules) {
   };
 }
 
-async function loadConfig(params) {
-  const configFile = await params.configFile;
-  const configName = await params.config;
+async function readAsJson(path = "$") {
+  return await read(process.openStdin())
+    .then(text => {
+      if (text === "") return undefined;
 
-  const config = ConfigLoader.load(configFile);
-  return config.get(configName);
+      return JSON.parse(text);
+    })
+    .then(json => {
+      if (!json) return undefined;
+
+      return jsonpath(json, path);
+    });
 }
 
-module.exports = validateExecutor;
+function streamInput(path = "$") {
+  let jsonPath;
+  if (path === "$") {
+    // For root path, parse array elements
+    jsonPath = [true];
+  } else {
+    // For specific paths, use the path
+    jsonPath = path.replace("$.", "");
+  }
+  return process.stdin.pipe(jsonStreamParse(jsonPath));
+}
+
+async function read(buffer) {
+  return new Promise((resolve, reject) => {
+    let inputString = "";
+
+    buffer.on("data", data => {
+      inputString += data;
+    });
+
+    buffer.on("error", error => {
+      reject(error);
+    });
+
+    buffer.on("end", () => {
+      resolve(inputString);
+    });
+  });
+}
+
+export default validateExecutor;

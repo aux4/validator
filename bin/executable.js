@@ -1,81 +1,39 @@
 #!/usr/bin/env node
 
-const { Engine } = require("@aux4/engine");
-const validateExecutor = require("./command/ValidateCommand");
-
-const config = {
-  profiles: [
-    {
-      name: "main",
-      commands: [
-        {
-          name: "validate",
-          execute: validateExecutor,
-          help: {
-            text: "validate json input",
-            variables: [
-              {
-                name: "configFile",
-                text: "Configuration file.\nIt automatically reads *config.yaml*, *config.yml*, *config.json*.",
-                default: ""
-              },
-              {
-                name: "config",
-                text: "Configuration name",
-                default: ""
-              },
-              {
-                name: "lang",
-                text: "Validator language",
-                default: "en"
-              },
-              {
-                name: "raw",
-                text: "Raw configuration",
-                default: "false"
-              },
-              {
-                name: "stream",
-                text: "Stream input",
-                default: "false"
-              },
-              {
-                name: "ignore",
-                text: "Ignore errors (always exit code 0)",
-                default: "false"
-              },
-              {
-                name: "silent",
-                text: "Does not output anything",
-                default: "false"
-              },
-              {
-                name: "onlyValid",
-                text: "Output only valid data",
-                default: "false"
-              },
-              {
-                name: "onlyInvalid",
-                text: "Output only invalid data",
-                default: "false"
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ]
-};
+import colors from "colors";
+import validateExecutor from "./command/ValidateCommand.js";
 
 (async () => {
-  const engine = new Engine({ aux4: config });
+  const args = process.argv.slice(2);
 
-  const args = process.argv.splice(2);
+  // Arguments in order: action, rules, lang, stream, ignore, silent, onlyValid, onlyInvalid
+  const [action, rules, lang, stream, ignore, silent, onlyValid, onlyInvalid] = args;
+
+  // For now, action is fixed as "validate"
+  if (action !== "validate") {
+    console.error("Only 'validate' action is supported");
+    process.exit(1);
+  }
 
   try {
-    await engine.run(args);
+    // Parse rules JSON
+    const rulesConfig = rules && rules !== "" ? JSON.parse(rules) : {};
+
+    // Prepare parameters for ValidateCommand
+    const params = {
+      rules: rulesConfig,
+      lang: lang || "en",
+      stream: stream || "",
+      ignore: ignore || "",
+      silent: silent || "",
+      onlyValid: onlyValid || "",
+      onlyInvalid: onlyInvalid || "",
+      root: "$"
+    };
+
+    await validateExecutor(params);
   } catch (e) {
-    console.error(e.message.red);
+    console.error(e.message.red, e);
     process.exit(1);
   }
 })();

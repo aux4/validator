@@ -2,13 +2,11 @@
   "name": "@aux4/validator",
   "version": "0.0.8",
   "description": "Command-line interface (CLI) to validate JSON data",
-  "main": "index.js",
+  "type": "module",
   "preferGlobal": true,
-  "bin": {
-    "aux4-validator": "bin/executable.js"
-  },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -20,19 +18,22 @@
     "json",
     "validator"
   ],
-  "author": "Aux4 Team",
+  "author": "aux4 LLC",
   "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/aux4/validator/issues"
   },
   "homepage": "https://github.com/aux4/validator#readme",
   "dependencies": {
-    "@aux4/config": "^1.0.3",
-    "@aux4/engine": "^1.0.67",
-    "@aux4/input": "^0.0.5",
+    "colors": "^1.4.0",
     "validatorjs": "^3.22.1"
   },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-virtual": "^3.0.2",
+    "rollup": "^4.46.3",
+    "rollup-plugin-copy": "^3.5.0"
   }
 }
