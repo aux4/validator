@@ -17,15 +17,6 @@
       "name": "main",
       "commands": [
         {
-          "name": "cool",
-          "execute": [
-            "stdin:echo 'cool command executed'"
-          ],
-          "help": {
-            "text": ""
-          }
-        },
-        {
           "name": "validator",
           "execute": [
             "profile:validator"

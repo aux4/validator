@@ -27,8 +27,6 @@ async function validateExecutor(params) {
     Validator.useLang('en');
   }
 
-  const rules = RuleExtractor.extractRules(rulesConfig);
-
   // Use streaming approach for both stream and non-stream modes to avoid memory issues
   const dataStream = streamInput(root);
   let hasInvalidItems = false;
@@ -37,7 +35,7 @@ async function validateExecutor(params) {
   let invalidItems = [];
   
   dataStream.on("data", data => {
-    const [valid, invalid] = validate(data, rules);
+    const [valid, invalid] = validate(data, rulesConfig);
     processedItems++;
     
     if (stream) {
@@ -100,16 +98,16 @@ function print(stream, data, isArray) {
   stream(JSON.stringify(outputData));
 }
 
-function validate(data, rules) {
+function validate(data, rulesConfig) {
   const valid = [];
   const invalid = [];
 
   const inputData = Array.isArray(data) ? data : [data];
 
   inputData.forEach(item => {
-    const result = validateObject(item, rules);
+    const result = validateObject(item, rulesConfig);
     if (result.valid) {
-      valid.push(item);
+      valid.push(result.transformedData);
     } else {
       invalid.push({ item, errors: result.errors });
     }
@@ -118,13 +116,56 @@ function validate(data, rules) {
   return [valid, invalid];
 }
 
-function validateObject(object, rules) {
-  const validator = new Validator(object, rules);
+function validateObject(object, rulesConfig) {
+  const rules = RuleExtractor.extractRules(rulesConfig);
+  const transformedData = transformDataByMapping(object, rulesConfig);
+  
+  const validator = new Validator(transformedData, rules);
 
   return {
     valid: validator.passes(),
-    errors: validator.errors.all()
+    errors: validator.errors.all(),
+    transformedData: transformedData
   };
+}
+
+function transformDataByMapping(object, config) {
+  const result = {};
+  
+  function processConfig(configObj, sourceObj, targetObj) {
+    Object.entries(configObj).forEach(([key, value]) => {
+      if (value === undefined || value === null) return;
+      
+      if (typeof value === "string") {
+        targetObj[key] = sourceObj[key];
+        return;
+      }
+      
+      if (typeof value !== "object") return;
+      
+      if (value.path && value.rule) {
+        const extractedValue = jsonpath(sourceObj, value.path);
+        targetObj[key] = extractedValue;
+      } else if (value.path && value.mapping) {
+        const nestedSource = jsonpath(sourceObj, value.path);
+        if (nestedSource) {
+          targetObj[key] = {};
+          processConfig(value.mapping, nestedSource, targetObj[key]);
+        }
+      } else if (value.mapping) {
+        targetObj[key] = {};
+        processConfig(value.mapping, sourceObj, targetObj[key]);
+      } else if (value.rule) {
+        targetObj[key] = sourceObj[key];
+      } else {
+        targetObj[key] = {};
+        processConfig(value, sourceObj, targetObj[key]);
+      }
+    });
+  }
+  
+  processConfig(config, object, result);
+  return result;
 }
 
 async function readAsJson(path = "$") {
