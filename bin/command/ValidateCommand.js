@@ -146,6 +146,15 @@ function transformDataByMapping(object, config) {
       if (value.path && value.rule) {
         const extractedValue = jsonpath(sourceObj, value.path);
         targetObj[key] = extractedValue;
+      } else if (value.path && value.type === 'array' && value.mapping) {
+        const extractedArray = jsonpath(sourceObj, value.path);
+        if (Array.isArray(extractedArray)) {
+          targetObj[key] = extractedArray.map(item => {
+            const mappedItem = {};
+            processConfig(value.mapping, item, mappedItem);
+            return mappedItem;
+          });
+        }
       } else if (value.path && value.mapping) {
         const nestedSource = jsonpath(sourceObj, value.path);
         if (nestedSource) {

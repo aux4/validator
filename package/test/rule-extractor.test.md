@@ -80,6 +80,23 @@ config:
           zip:
             path: $.zip
             rule: "integer|required"
+    nested-array:
+      name:
+        path: $.name
+        rule: "alpha|required"
+      age:
+        path: $.age
+        rule: "integer"
+      contacts:
+        path: $.contacts
+        type: array
+        mapping:
+          email:
+            path: $.email
+            rule: "email|required"
+          phone:
+            path: $.phone
+            rule: "required"
 ```
 
 ```execute
@@ -127,6 +144,111 @@ echo '[{"name":"John","age":25,"address":{"street":"","city":"","state":"","zip"
     ],
     "address.zip": [
       "The address.zip must be an integer."
+    ]
+  }
+}
+```
+
+## Nested array validation
+
+```file:config.yaml
+config:
+  data:
+    simple:
+      name:
+        path: $.name
+        rule: "alpha|required"
+      age:
+        path: $.age
+        rule: "integer"
+    nested-fields:
+      name:
+        path: $.name
+        rule: "alpha|required"
+      age:
+        path: $.age
+        rule: "integer"
+      address:
+        path: $.address
+        mapping:
+          street:
+            path: $.street
+            rule: "required"
+          city:
+            path: $.city
+            rule: "required"
+          state:
+            path: $.state
+            rule: "required"
+          zip:
+            path: $.zip
+            rule: "integer|required"
+    nested-array:
+      name:
+        path: $.name
+        rule: "alpha|required"
+      age:
+        path: $.age
+        rule: "integer"
+      contacts:
+        path: $.contacts
+        type: array
+        mapping:
+          email:
+            path: $.email
+            rule: "email|required"
+          phone:
+            path: $.phone
+            rule: "required"
+```
+
+```execute
+echo '[{"name":"John","age":25,"contacts":[{"email":"john@example.com","phone":"555-1234"},{"email":"john.work@example.com","phone":"555-5678"}]}]' | aux4 validator validate --config data --rules nested-array --ignore --onlyValid | jq .
+```
+
+```expect
+{
+  "name": "John",
+  "age": 25,
+  "contacts": [
+    {
+      "email": "john@example.com",
+      "phone": "555-1234"
+    },
+    {
+      "email": "john.work@example.com",
+      "phone": "555-5678"
+    }
+  ]
+}
+```
+
+```execute
+echo '[{"name":"John","age":25,"contacts":[{"email":"john@example.com","phone":"555-1234"},{"email":"invalid-email","phone":""}]}]' | aux4 validator validate --config data --rules nested-array --onlyInvalid 2>&1 | jq .
+```
+
+```expect
+{
+  "item": {
+    "name": "John",
+    "age": 25,
+    "contacts": [
+      {
+        "email": "john@example.com",
+        "phone": "555-1234"
+      },
+      {
+        "email": "invalid-email",
+        "phone": ""
+      }
+    ]
+  },
+  "errors": {
+    "contacts.1.email": [
+      "The contacts.1.email format is invalid."
+    ],
+    "contacts.1.phone": [
+      "The contacts.1.phone field is required."
     ]
   }
 }
