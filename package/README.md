@@ -186,7 +186,7 @@ Expected output: the reconstructed, validated object.
 
 ## Configuration
 
-aux4/validator expects your validation rule sets to be available inside your aux4 configuration (for example under `config.data`). Each rule set is a mapping of field names to objects specifying `path`, `rule`, and optionally `type` and `mapping` for nested structures. See the `test/*.test.md` files in this package for many real examples you can copy.
+aux4/validator expects your validation rule sets to be available inside your aux4 configuration (for example under `config.data`). Each rule set is a mapping of field names to objects specifying `path`, `rule`, and optionally `type` and `mapping` for nested structures.
 
 ### Minimal rule entry
 
@@ -194,94 +194,6 @@ aux4/validator expects your validation rule sets to be available inside your aux
 fieldName:
   path: $.json.path
   rule: "required|integer"
-```
-
-## Package manifest (.aux4)
-
-Below is the package .aux4 manifest that defines profiles, commands and variables for this package.
-
-```json
-{
-  "scope": "aux4",
-  "name": "validator",
-  "version": "1.1.0",
-  "description": "aux4 data validator",
-  "dependencies": [
-    "aux4/config"
-  ],
-  "tags": [
-    "aux4",
-    "validator",
-    "data",
-    "json"
-  ],
-  "profiles": [
-    {
-      "name": "main",
-      "commands": [
-        {
-          "name": "validator",
-          "execute": [
-            "profile:validator"
-          ],
-          "help": {
-            "text": "aux4 data validator"
-          }
-        }
-      ]
-    },
-    {
-      "name": "validator",
-      "commands": [
-        {
-          "name": "validate",
-          "execute": [
-            "stdin:node ${packageDir}/lib/aux4-validator.mjs validate value($rules) values(lang, stream, ignore, silent, onlyValid, onlyInvalid)"
-          ],
-          "help": {
-            "text": "validate json input",
-            "variables": [
-              {
-                "name": "rules",
-                "text": "Validation rules"
-              },
-              {
-                "name": "lang",
-                "text": "Validator language",
-                "default": "en"
-              },
-              {
-                "name": "stream",
-                "text": "Stream input",
-                "default": "false"
-              },
-              {
-                "name": "ignore",
-                "text": "Ignore errors (always exit code 0)",
-                "default": "false"
-              },
-              {
-                "name": "silent",
-                "text": "Does not output anything",
-                "default": "false"
-              },
-              {
-                "name": "onlyValid",
-                "text": "Output only valid data",
-                "default": "false"
-              },
-              {
-                "name": "onlyInvalid",
-                "text": "Output only invalid data",
-                "default": "false"
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ]
-}
 ```
 
 ## See Also
